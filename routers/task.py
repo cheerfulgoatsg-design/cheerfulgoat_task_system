@@ -10,7 +10,7 @@ router = APIRouter(
 
 get_db = database.get_db
 
-# 提交新任务 (保留原有功能)
+# 提交新任务
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 def create_task(request: schemas.TaskCreate, db: Session = Depends(get_db)):
     new_task = models.Task(
@@ -18,20 +18,22 @@ def create_task(request: schemas.TaskCreate, db: Session = Depends(get_db)):
         description=request.description,
         platform=request.platform,
         is_urgent=request.is_urgent,
-        status="待处理" # 默认状态
+        # --- 看！这里把截止日期也存进数据库了 ---
+        deadline=request.deadline, 
+        status="待处理"
     )
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
     return new_task
 
-# 获取所有任务列表 (新功能！)
+# 获取所有任务列表
 @router.get('/', response_model=List[schemas.Task])
 def get_all_tasks(db: Session = Depends(get_db)):
     tasks = db.query(models.Task).order_by(models.Task.created_at.desc()).all()
     return tasks
 
-# 修改任务状态 (新功能！)
+# 修改任务状态
 @router.put('/{id}/status')
 def update_status(id: int, new_status: str, db: Session = Depends(get_db)):
     task = db.query(models.Task).filter(models.Task.id == id)
