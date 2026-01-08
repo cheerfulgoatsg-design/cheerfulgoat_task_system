@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CheerfulGoat 登录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-orange-50 h-screen flex items-center justify-center">
+    <div class="bg-white p-10 rounded-2xl shadow-xl w-96 border border-orange-100 text-center">
+        <h2 class="text-3xl font-bold text-orange-600 mb-2">CheerfulGoat</h2>
+        <p class="text-gray-500 mb-8">中台任务管理系统</p>
+        
+        <div class="space-y-5 text-left">
+            <div>
+                <label class="block text-sm font-medium text-gray-600">管理账号</label>
+                <input type="text" id="u" class="w-full border-2 border-orange-100 p-3 rounded-xl mt-1 outline-none focus:border-orange-500" placeholder="admin">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600">登录密码</label>
+                <input type="password" id="p" class="w-full border-2 border-orange-100 p-3 rounded-xl mt-1 outline-none focus:border-orange-500" placeholder="123456">
+            </div>
+            <button onclick="doLogin()" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg transition">
+                开启任务看板
+            </button>
+        </div>
+        <p id="msg" class="text-red-500 text-sm mt-4 hidden"></p>
+    </div>
+
+    <script>
+        // 🚨 请一定要把这里换成您在 Render 上的真实网址
+        const API = "https://cheerfulgoat-task-system.onrender.com";
+
+        async function doLogin() {
+            const user = document.getElementById('u').value;
+            const pass = document.getElementById('p').value;
+            const msg = document.getElementById('msg');
+
+            try {
+                // 注意：这里要匹配您 FastAPI 后端的登录接口
+                const res = await fetch(`${API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // 🔑 拿到通行证并存起来
+                    localStorage.setItem('cfg_token', data.access_token);
+                    alert("登录成功！这就带您去看任务。");
+                    window.location.href = "index.html"; 
+                } else {
+                    msg.innerText = "账号或密码不对，请老人家再试一次。";
+                    msg.classList.remove('hidden');
+                }
+            } catch (err) {
+                alert("连不上后端，请检查 Render 地址是否正确。");
+            }
+        }
+    </script>
+</body>
+</html>
