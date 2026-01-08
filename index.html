@@ -45,6 +45,62 @@
     </form>
 
     <p id="message"></p>
+<script>
+    // 首先，获取我们后端的服务地址
+    const backendUrl = 'https://cheerfulgoat-task-system.onrender.com';
 
+    // 找到页面上的表单和用于显示消息的段落
+    const taskForm = document.getElementById('task-form' );
+    const messageElement = document.getElementById('message');
+
+    // 当用户提交表单时，执行以下操作
+    taskForm.addEventListener('submit', function(event) {
+        // 阻止表单的默认提交行为（防止页面刷新）
+        event.preventDefault();
+
+        // 从表单中获取用户填写的数据
+        const formData = new FormData(taskForm);
+        const taskData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            platform: formData.get('platform'),
+            is_urgent: formData.get('is_urgent') === 'on' // 复选框的值比较特殊
+        };
+
+        // 显示“正在提交...”的消息
+        messageElement.textContent = '正在提交，请稍候...';
+        messageElement.style.color = 'blue';
+
+        // 使用“fetch”这个现代的“无线对讲机”，向我们的后端发送数据
+        fetch(`${backendUrl}/tasks/`, {
+            method: 'POST', // 我们要用“POST”方法来创建新任务
+            headers: {
+                'Content-Type': 'application/json', // 告诉后端，我们发送的是JSON格式的数据
+            },
+            body: JSON.stringify(taskData) // 把我们的数据转换成JSON字符串
+        })
+        .then(response => {
+            // 当后端收到并处理后，会给我们一个回复
+            if (response.ok) {
+                // 如果回复是成功的 (比如状态码是 200)
+                return response.json(); // 我们解析回复的内容
+            } else {
+                // 如果回复是失败的
+                throw new Error('提交失败，请检查您的输入或联系管理员。');
+            }
+        })
+        .then(data => {
+            // 当成功解析回复内容后
+            messageElement.textContent = `任务 "${data.title}" 提交成功！任务ID是: ${data.id}`;
+            messageElement.style.color = 'green';
+            taskForm.reset(); // 清空表单，方便提交下一个
+        })
+        .catch(error => {
+            // 如果在任何一个环节出错了
+            messageElement.textContent = error.message;
+            messageElement.style.color = 'red';
+        });
+    });
+</script>
 </body>
 </html>
