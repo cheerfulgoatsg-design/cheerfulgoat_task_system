@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status
+# --- 看！我们把 HTTPException 加回来了！---
+from fastapi import APIRouter, Depends, status, HTTPException 
 from sqlalchemy.orm import Session
 import schemas, database, models, hashing
 
@@ -9,7 +10,6 @@ router = APIRouter(
 
 get_db = database.get_db
 
-# --- 看！我们把 response_model 从 schemas.ShowUser 改回了 schemas.User ---
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 def create_user(request: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user = models.User(
