@@ -11,11 +11,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # “白名单”配置
-origins = [
-    "https://cheerfulgoat-frontend.onrender.com",
-    "https://cheerfulgoat-task-panel.onrender.com", # <--- 这是您的新网址
-    "http://localhost:3000",
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
