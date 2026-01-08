@@ -24,18 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 2. 数据库配置（增加了防断线设置） ---
+# --- 2. 数据库配置（防断线版） ---
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-# 这里增加了两个重要参数：
-# pool_pre_ping=True: 每次动保险柜前，先测试线通不通
-# pool_recycle=300: 每隔5分钟自动换一根新线，防止线路老化断开
-engine = create_engine(
-    DATABASE_URL, 
-    pool_pre_ping=True, 
-    pool_recycle=300
-)
-
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -58,7 +49,7 @@ def get_db():
     finally:
         db.close()
 
-# --- 3. 登录与安全 ---
+# --- 3. 登录逻辑 ---
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if form_data.username == ADMIN_USERNAME and form_data.password == ADMIN_PASSWORD:
@@ -78,11 +69,9 @@ def read_tasks(db: Session = Depends(get_db), current_user: str = Depends(get_cu
 
 @app.post("/tasks/")
 def create_task(task: dict, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
-    # 稍微优化了下解析，防止日期格式报错
     deadline_dt = None
     if task.get("deadline"):
         deadline_dt = datetime.fromisoformat(task["deadline"].replace("Z", ""))
-        
     db_task = TaskModel(
         title=task["title"],
         platform=task["platform"],
@@ -95,6 +84,29 @@ def create_task(task: dict, db: Session = Depends(get_db), current_user: str = D
     db.refresh(db_task)
     return db_task
 
+# 【核心功能更新】：修改整个任务内容
+@app.put("/tasks/{task_id}")
+def update_task(task_id: int, updated_data: dict, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+    db_task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="未找到任务")
+    
+    # 更新字段
+    if "title" in updated_data: db_task.title = updated_data["title"]
+    if "platform" in updated_data: db_task.platform = updated_data["platform"]
+    if "is_urgent" in updated_data: db_task.is_urgent = updated_data["is_urgent"]
+    if "status" in updated_data: db_task.status = updated_data["status"]
+    if "deadline" in updated_data:
+        if updated_data["deadline"]:
+            db_task.deadline = datetime.fromisoformat(updated_data["deadline"].replace("Z", ""))
+        else:
+            db_task.deadline = None
+            
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+# 快捷更新状态（保留）
 @app.put("/tasks/{task_id}/status")
 def update_status(task_id: int, new_status: str, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
@@ -110,3 +122,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db), current_user: str =
     db.delete(db_task)
     db.commit()
     return {"message": "已删除"}
+
+@app.get("/")
+def home():
+    return {"message": "爷爷好！后端大管家正在值班中。"}
