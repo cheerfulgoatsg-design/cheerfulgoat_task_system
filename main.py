@@ -4,22 +4,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import os
-from datetime import datetime, timedelta
-from sqlalchemy import create_all, Column, Integer, String, Boolean, DateTime, create_engine
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
 # --- 1. 基础配置与安全设置 ---
-# 建议在 Render 的 Environment 变量中设置这些值
-# 临时默认密码：admin123 (之后咱们可以改)
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Goat2026!")
 SECRET_KEY = os.getenv("SECRET_KEY", "cheerful-goat-secret-key-2026")
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# 允许您的前端网页访问（跨域设置）
+# 允许跨域访问
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -43,6 +41,7 @@ class TaskModel(Base):
     status = Column(String, default="待处理")
     deadline = Column(DateTime, nullable=True)
 
+# 这里是系统自动在数据库里建表的地方
 Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -52,23 +51,20 @@ def get_db():
     finally:
         db.close()
 
-# --- 3. 登录逻辑 (签发工卡) ---
+# --- 3. 登录逻辑 ---
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    # 检查用户名和密码
     if form_data.username == ADMIN_USERNAME and form_data.password == ADMIN_PASSWORD:
-        # 这里简单处理：如果账号密码对，就返回一个写死的 Token
-        # 之后可以升级为更复杂的加密 Token
         return {"access_token": "cheerful-goat-token-fixed", "token_type": "bearer"}
     raise HTTPException(status_code=400, detail="用户名或密码错误")
 
-# 验证工卡的“保安”函数
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     if token != "cheerful-goat-token-fixed":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="证件无效")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效证件")
     return ADMIN_USERNAME
 
-# --- 4. 任务管理接口 (全部加上保安检查) ---
-
+# --- 4. 任务管理接口 ---
 class TaskCreate(BaseModel):
     title: str
     platform: str
