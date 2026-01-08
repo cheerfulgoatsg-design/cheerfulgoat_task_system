@@ -1,42 +1,37 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Response
-from sqlalchemy.orm import Session
-from typing import List
-import models, schemas, database, hashing
-from routers import user # 导入我们创建的用户路由
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import models
+from database import engine
+from routers import user
 
-# --- App Initialization ---
-app = FastAPI(
-    title="CheerfulGoat 任务管理系统",
-    description="一个为100岁老爷爷定制的专属任务管理中台",
-    version="1.0.0",
+# 创建数据库表
+models.Base.metadata.create_all(bind=engine)
+
+# 创建 FastAPI 应用实例
+app = FastAPI()
+
+# --- 这是我们新添加的“白名单”配置！ ---
+origins = [
+    "https://cheerfulgoat-frontend.onrender.com", # 允许我们的前端地址访问
+    "http://localhost", # 为了以后本地测试方便
+    "http://localhost:8080", # 为了以后本地测试方便
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins, # 告诉“保安” ，只允许这些地址的人进来
+    allow_credentials=True,
+    allow_methods=["*"], # 允许他们使用任何方法 (GET, POST, etc.)
+    allow_headers=["*"], # 允许他们携带任何类型的“信封”
 )
+# --- “白名单”配置结束 ---
 
-# --- Database Creation ---
-models.Base.metadata.create_all(bind=database.engine)
 
-# --- Include Routers ---
-app.include_router(user.router) # 将用户接待处的功能包含进来
+# 包含用户路由
+app.include_router(user.router)
 
-# --- Root Endpoint ---
+# 根路由
 @app.get("/")
 def read_root():
-    content = '{"message":"欢迎来到 CheerfulGoat 任务管理系统！"}'
-    return Response(content=content, media_type="application/json; charset=utf-8")
+    return {"message": "欢迎来到 CheerfulGoat 任务管理系统！"}
 
-# --- Task Endpoints (we will add more later) ---
-@app.post("/tasks/", response_model=schemas.ShowTask, tags=['Tasks'])
-def create_task(request: schemas.TaskCreate, db: Session = Depends(database.get_db)):
-    # 在真实场景中，我们应该从登录用户那里获取 creator_id
-    # 这里我们暂时硬编码为第一个用户，后续会用登录系统替换
-    temp_creator_id = 1 
-    
-    new_task = models.Task(**request.dict(), creator_id=temp_creator_id)
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-    return new_task
-
-@app.get("/tasks/", response_model=List[schemas.ShowTask], tags=['Tasks'])
-def get_all_tasks(db: Session = Depends(database.get_db)):
-    tasks = db.query(models.Task).all()
-    return tasks
