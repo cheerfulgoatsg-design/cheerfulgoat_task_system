@@ -92,3 +92,13 @@ def update_status(task_id: int, new_status: str, db: Session = Depends(get_db), 
     db_task.status = new_status
     db.commit()
     return db_task
+# --- 在代码最末尾添加这个“删除”接口 ---
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+    db_task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="任务未找到")
+    db.delete(db_task)
+    db.commit()
+    return {"message": "任务已成功删除"}
