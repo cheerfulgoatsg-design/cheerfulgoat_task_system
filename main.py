@@ -85,25 +85,37 @@ def create_task(task: dict, db: Session = Depends(get_db), current_user: str = D
     return db_task
 
 # 【核心功能更新】：修改整个任务内容
+# 【找到这一段，全部替换】
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, updated_data: dict, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="未找到任务")
     
-    # 更新字段
-    if "title" in updated_data: db_task.title = updated_data["title"]
-    if "platform" in updated_data: db_task.platform = updated_data["platform"]
-    if "is_urgent" in updated_data: db_task.is_urgent = updated_data["is_urgent"]
-    if "status" in updated_data: db_task.status = updated_data["status"]
+    # 这里是重点：大管家开始逐一检查您想修改的内容
+    if "title" in updated_data: 
+        db_task.title = updated_data["title"]
+    if "platform" in updated_data: 
+        db_task.platform = updated_data["platform"]
+    
+    # --- 就是这一行，让描述也能被修改了 ---
+    if "description" in updated_data: 
+        db_task.description = updated_data["description"]
+        
+    if "is_urgent" in updated_data: 
+        db_task.is_urgent = updated_data["is_urgent"]
+    if "status" in updated_data: 
+        db_task.status = updated_data["status"]
+    
     if "deadline" in updated_data:
         if updated_data["deadline"]:
+            # 处理日期格式，防止系统看不懂
             db_task.deadline = datetime.fromisoformat(updated_data["deadline"].replace("Z", ""))
         else:
             db_task.deadline = None
             
-    db.commit()
-    db.refresh(db_task)
+    db.commit()      # 存入保险柜
+    db.refresh(db_task) # 刷新一下状态
     return db_task
 
 # 快捷更新状态（保留）
