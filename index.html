@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheerfulGoat 任务提交系统</title>
+</head>
+<body>
+
+    <h1>提交新任务</h1>
+
+    <form id="task-form">
+        <label for="title">任务标题:</label>  
+
+        <input type="text" id="title" name="title" required>  
+  
+
+
+        <label for="description">任务描述:</label>  
+
+        <textarea id="description" name="description" rows="4" cols="50"></textarea>  
+  
+
+
+        <label for="platform">电商平台:</label>  
+
+        <select id="platform" name="platform" required>
+            <option value="亚马逊">亚马逊</option>
+            <option value="tiktok">TikTok</option>
+            <option value="独立站">独立站</option>
+            <option value="虾皮">虾皮</option>
+            <option value="国内">国内</option>
+            <option value="b端">B端</option>
+            <option value="杂项">杂项</option>
+        </select>  
+  
+
+
+        <input type="checkbox" id="is_urgent" name="is_urgent">
+        <label for="is_urgent">是否紧急</label>  
+  
+
+
+        <button type="submit">提交任务</button>
+    </form>
+
+    <p id="message"></p>
+
+</body>
+</html>
