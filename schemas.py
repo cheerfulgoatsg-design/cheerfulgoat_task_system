@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
-# --- User Schemas ---
+# --- 这是用户相关的尺寸定义 ---
 class UserBase(BaseModel):
     username: str
     role: str
@@ -9,15 +9,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class ShowUser(UserBase):
+class User(UserBase):
     id: int
-    is_active: bool
-    tasks: List["ShowTask"] = []
 
-    class Config():
-        orm_mode = True
+    class Config:
+        from_attributes = True
 
-# --- Task Schemas ---
+# --- 这是我们新补上的、任务相关的尺寸定义！ ---
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
@@ -27,23 +25,22 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     pass
 
-class ShowTask(TaskBase):
+class Task(TaskBase):
     id: int
     status: str
-    creator_id: int
-    creator: ShowUser
+    created_at: str # 我们让它返回字符串，前端处理更简单
 
-    class Config():
-        orm_mode = True
-        
-# --- Token Schemas for Login ---
+    class Config:
+        from_attributes = True
+
+# --- 登录相关的尺寸定义 ---
+class Login(BaseModel):
+    username: str
+    password: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
     username: Optional[str] = None
-
-class Login(BaseModel):
-    username: str
-    password: str
