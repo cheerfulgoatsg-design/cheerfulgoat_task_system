@@ -21,7 +21,6 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     platform: str
     is_urgent: bool = False
-    # --- 看！我们在这里加了截止日期这一行 ---
     deadline: Optional[datetime] = None 
 
 class TaskCreate(TaskBase):
@@ -34,7 +33,7 @@ class Task(TaskBase):
     class Config:
         from_attributes = True
 
-# --- 登录相关的定义 ---
+# --- 登录相关的定义 (新增部分) ---
 class Login(BaseModel):
     username: str
     password: str
