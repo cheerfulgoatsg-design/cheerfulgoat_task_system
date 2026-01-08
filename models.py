@@ -19,6 +19,7 @@ class Task(Base):
     is_urgent = Column(Boolean, default=False)
     status = Column(String, default='pending', nullable=False) # pending, in_progress, completed, archived, rejected
     created_at = Column(DateTime, server_default=func.now())
+    deadline = Column(DateTime, nullable=True)
     updated_at = Column(DateTime, onupdate=func.now())
     creator_id = Column(Integer, ForeignKey('users.id'))
     creator = relationship("User", back_populates="tasks_created")
